@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Creator Game Radar · Top Games &amp; Gameplay Ideas</title>
+<meta name="description" content="Top games from Steam, Roblox and GameJolt, with gameplay breakdowns and video previews, to spark gameplay ideas for creators." />
+<script src="echarts.min.js"></script>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#1d2433; --muted:#6b7280; --line:#eceef2;
+    --steam:#1b9bf0; --roblox:#22a65b; --gj:#ff5a5f;
+    --accent:#5b5bd6; --soft:#f6f7fb; --chip:#eef0f6; --chipOn:#1d2433;
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+  header.hero{padding:8px 0 18px}
+  .kicker{font-size:13px;letter-spacing:.12em;color:var(--muted);font-weight:600;text-transform:uppercase}
+  h1{font-size:32px;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+  h1 .em{color:var(--accent)}
+  .sub{color:var(--muted);font-size:15px;max-width:780px}
+  .meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+  .pill{font-size:12.5px;background:var(--soft);border:1px solid var(--line);color:var(--muted);
+    padding:5px 11px;border-radius:999px;font-weight:600}
+  .pill b{color:var(--ink)}
+
+  .section-title{font-size:20px;font-weight:800;margin:34px 0 4px;display:flex;align-items:center;gap:10px}
+  .section-title .bar{width:6px;height:22px;border-radius:3px;background:var(--accent)}
+  .section-sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+
+  .filters{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
+    border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:22px 0 8px;box-shadow:var(--shadow)}
+  .frow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .flabel{font-size:12px;color:var(--muted);font-weight:700;margin-right:4px;min-width:62px}
+  .chip{font-size:13px;font-weight:600;color:var(--muted);background:var(--chip);border:1px solid transparent;
+    padding:6px 12px;border-radius:999px;cursor:pointer;transition:.15s;user-select:none}
+  .chip:hover{color:var(--ink)}
+  .chip.on{background:var(--chipOn);color:#fff;border-color:var(--chipOn)}
+  .chip.steam.on{background:var(--steam)} .chip.roblox.on{background:var(--roblox)} .chip.gj.on{background:var(--gj)}
+  .count{margin-left:auto;font-size:12.5px;color:var(--muted);font-weight:600}
+
+  .bento{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:8px}
+  .bento .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+  .bento .card.span2{grid-column:span 2}
+  .bento .card h3{margin:0 0 6px;font-size:15px;font-weight:700;line-height:1.35}
+  .bento .card p{margin:0;font-size:13.5px;color:#3b4252}
+  .tag-inline{display:inline-block;font-size:11.5px;font-weight:700;color:var(--accent);background:#eef0fb;
+    border-radius:6px;padding:2px 7px;margin-bottom:8px}
+  .chart-box{background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:16px 20px;margin:16px 0}
+  .chart-box h2{font-size:16px;margin:0 0 4px;font-weight:700}
+  .chart-box .note{font-size:12.5px;color:var(--muted);margin:0 0 6px}
+  #echart{width:100%;height:330px}
+
+  .plat-head{display:flex;align-items:center;gap:12px;margin:30px 0 12px;flex-wrap:wrap}
+  .plat-dot{width:12px;height:12px;border-radius:50%}
+  .plat-head h2{font-size:19px;margin:0;font-weight:800}
+  .plat-head .desc{color:var(--muted);font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+
+  .game{display:flex;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
+  .preview{position:relative;flex:0 0 42%;min-height:230px;background:#0f1115;overflow:hidden}
+  .preview iframe{position:absolute;inset:0;width:100%;height:100%;border:0;z-index:3}
+  .preview .thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .preview .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;padding:16px;text-align:center;color:#fff;font-weight:800;font-size:15px;line-height:1.3;
+    background:linear-gradient(135deg,#2b3350,#5b5bd6)}
+  .preview .ph small{font-weight:600;font-size:12px;opacity:.85}
+  .preview.playable{cursor:pointer}
+  .preview .play{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;z-index:2;
+    border-radius:50%;background:rgba(0,0,0,.62);border:2px solid rgba(255,255,255,.9);transition:.15s}
+  .preview .play::after{content:"";position:absolute;left:22px;top:16px;border-style:solid;
+    border-width:12px 0 12px 19px;border-color:transparent transparent transparent #fff}
+  .preview.playable:hover .play{background:#ff0033;border-color:#fff;transform:scale(1.08)}
+  .preview .rank{position:absolute;top:8px;left:8px;z-index:4;background:rgba(17,20,28,.84);color:#fff;
+    font-weight:800;font-size:13px;padding:3px 9px;border-radius:8px}
+  .preview .plat-badge{position:absolute;top:8px;right:8px;z-index:4;color:#fff;font-size:11.5px;font-weight:700;
+    padding:3px 9px;border-radius:8px}
+  .preview .yt-link{position:absolute;right:8px;bottom:8px;z-index:4;background:rgba(17,20,28,.85);color:#fff;
+    font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:8px}
+  .preview .yt-link:hover{background:#ff0033}
+  .body{flex:1;padding:14px 16px;display:flex;flex-direction:column;min-width:0}
+  .gtitle{font-size:16px;font-weight:800;margin:0;line-height:1.3}
+  .gtags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px}
+  .gtag{font-size:11.5px;font-weight:600;color:#52607a;background:var(--soft);border:1px solid var(--line);
+    padding:2px 8px;border-radius:6px;cursor:pointer}
+  .gtag:hover{border-color:var(--accent);color:var(--accent)}
+  .gdesc{font-size:13.5px;color:#3b4252;margin:0 0 8px}
+  .gidea{font-size:13px;color:#4a3fa8;background:#f1f0fc;border-radius:8px;padding:7px 10px;margin:0 0 10px;flex:1}
+  .gidea b{font-weight:800}
+  .glinks{display:flex;gap:14px;font-size:12.5px;font-weight:600;flex-wrap:wrap}
+  .glinks a{color:var(--accent);border-bottom:1px solid transparent}
+  .glinks a:hover{border-color:var(--accent)}
+
+  footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+  footer p{margin:4px 0}
+  @media(max-width:860px){
+    h1{font-size:26px}
+    .bento{grid-template-columns:repeat(2,1fr)} .bento .card.span2{grid-column:span 2}
+    .grid{grid-template-columns:1fr}
+    .game{flex-direction:column} .preview{flex:none;height:210px;min-height:210px}
+  }
+  @media(max-width:520px){ .bento{grid-template-columns:1fr} .bento .card.span2{grid-column:span 1} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">Creator Game Radar · October 2026</div>
+    <h1>Creator <span class="em">Game Radar</span> · What's topping the charts</h1>
+    <p class="sub">The current top games on <b>Steam Top Sellers</b>, <b>Roblox Top Playing Now</b> and <b>GameJolt Hot</b>, each with a plain-language gameplay breakdown, a design idea worth borrowing, and a video preview. Use it to find fresh gameplay ideas for your next map or experience.</p>
+    <div class="meta-row">
+      <span class="pill">Sources <b>Steam / Roblox / GameJolt</b></span>
+      <span class="pill">Games <b id="pill-games">30</b></span>
+      <span class="pill">Gameplay tags <b id="pill-tags">0</b></span>
+    </div>
+  </header>
+
+  <div class="section-title"><span class="bar"></span>Cross-platform gameplay trends</div>
+  <p class="section-sub">Five patterns that show up across the three charts. The facts come from the game pages and press coverage; the takeaways are our reading.</p>
+  <div class="bento">
+    <div class="card span2">
+      <span class="tag-inline">Strongest pattern</span>
+      <h3>"Steal it, carry it home, earn from it" dominates Roblox</h3>
+      <p>Steal An Egg is the most-played experience on Roblox and the only one above one million concurrent players in this snapshot. Steal a Brainrot is also in the top 10. Both share one loop: grab something valuable, make it back to base, earn passive income from it, then raid other players. The tension lives in the run home.</p>
+    </div>
+    <div class="card">
+      <span class="tag-inline">Co-op fear</span>
+      <h3>Co-op survival horror keeps landing</h3>
+      <p>99 Nights in the Forest and Dandy's World on Roblox, Dead by Daylight on Steam, and XANNIBAN on GameJolt all pair a threat with a clear objective and teammates.</p>
+    </div>
+    <div class="card">
+      <span class="tag-inline">Low-barrier social</span>
+      <h3>Voting and roleplay still scale</h3>
+      <p>Dress To Impress wins on player voting, not combat. Murder Mystery 2 and Adopt Me! show how simple social rules can last for years.</p>
+    </div>
+    <div class="card span2">
+      <span class="tag-inline">Indie breakout</span>
+      <h3>A silly premise with a real system underneath</h3>
+      <p>Moon Sweepers (clean the entire moon, starting with a toothbrush) hid a logistics and power-grid game behind the joke and peaked around 36,000 concurrent players on Steam within days of launch, from a two-person team. SuperWEIRD on GameJolt follows the same idea with idle automation.</p>
+    </div>
+    <div class="card">
+      <span class="tag-inline">Readable action</span>
+      <h3>Clear combat signals sell</h3>
+      <p>Phantom Blade Zero uses colour-coded attacks (blue to parry, red to dodge) and weapon swapping to keep fast fights legible.</p>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <h2>Roblox: most-played experiences right now</h2>
+    <p class="note">Concurrent players in thousands, as shown on the Roblox chart in the October 20, 2026 snapshot. The same list appeared under every country setting checked.</p>
+    <div id="echart"></div>
+  </div>
+
+  <div class="filters">
+    <div class="frow">
+      <span class="flabel">Platform</span>
+      <span class="chip on" data-f="platform" data-v="all">All</span>
+      <span class="chip steam" data-f="platform" data-v="steam">Steam</span>
+      <span class="chip roblox" data-f="platform" data-v="roblox">Roblox</span>
+      <span class="chip gj" data-f="platform" data-v="gj">GameJolt</span>
+      <span class="count" id="count">30 games</span>
+    </div>
+    <div class="frow" id="tagrow" style="margin-top:8px">
+      <span class="flabel">Gameplay</span>
+      <span class="chip on" data-f="tag" data-v="all">All</span>
+    </div>
+  </div>
+
+  <div id="lists"></div>
+
+  <footer>
+    <p><b>Data:</b> Steam Top Sellers (Global) and GameJolt Hot were captured on October 27, 2026. The Roblox chart is the Top Playing Now list captured on October 20, 2026 through a third-party snapshot. Charts change daily.</p>
+    <p><b>Content:</b> Descriptions are summarised from official game pages and press coverage. "Idea" lines are our own interpretation, not official statements. Videos are official trailers or community gameplay on YouTube and may be region-restricted. This is an unofficial inspiration tool, not an official ranking.</p>
+  </footer>
+</div>
+
+<script>
+const VIDEOS = {"steam1": "yLFRQaQT0qM", "steam2": "Wf9irsB_ETs", "steam3": "6J2tgFTVcNU", "steam4": "vZV1pQP09p8", "steam5": "-cSFPIwMEq4", "steam6": "-dCEr1a3qz4", "steam7": "LGGsv9zT7JM", "steam8": "u_dgDRXLfcs", "steam9": "BJl6QvjFpsA", "steam10": "QvCztNlLt80", "rb1": "GVTeMVqFJzI", "rb2": "OO3EnUZtLBE", "rb3": "ZrVwFcllsfA", "rb4": "i6gUV4LwzVE", "rb5": "h-tbGuHFaqE", "rb7": "W8QWG2MCZOc", "rb8": "SACrN-n9rSg", "gj1": "_CTou6eEGG8", "gj2": "sDkC4hTYNTw", "gj3": "DRShkD6cIOk", "gj5": "r6n-CfUhdlY", "gj7": "uDQSQ-029Jc", "gj8": "JtKr2je5gec", "gj9": "QfJSRGAvSyc", "gj10": "VbFZFto8Naw", "rb6": "OvYQMC20w7w", "rb9": "FzWr0lAesXc", "rb10": "IAwduNpafQ4", "gj4": "2y4WrTFs2kE"};
+
+const GAMES = [
+  // ===== STEAM — Top Sellers (Global) =====
+  {p:"steam",r:1,name:"Call of Duty: Modern Warfare 4",tags:["Shooter","Competitive"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"Call of Duty Modern Warfare 4 gameplay",
+   desc:"Infinity Ward's annual shooter, released October 23, 2026 on PC, PS5, Xbox Series X|S and Switch 2. The campaign follows a North Korean invasion of the Korean Peninsula, with missions in Korea, New York, Paris and Mumbai. Multiplayer ships with 12 new 6v6 maps plus large vehicle maps, and DMZ is an extraction mode where squads loot, fight and escape.",
+   idea:"Three modes (story, 6v6, extraction) built on one shared combat feel."},
+  {p:"steam",r:2,name:"Phantom Blade Zero",tags:["Action RPG"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"Phantom Blade Zero gameplay",
+   desc:"S-Game's \"kungfupunk\" wuxia action RPG, launching this week on PC and PS5. You carry two weapons and swap between them mid-combo; swapping refreshes the Sha-Chi resource that replaces a classic stamina bar. Blue attacks are parried, red attacks are dodged, and breaking an enemy's posture opens a finisher.",
+   idea:"Colour-coded attack warnings (blue = parry, red = dodge) are an easy pattern to borrow for boss or duel design."},
+  {p:"steam",r:3,name:"Counter-Strike 2",tags:["Shooter","Competitive"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"Counter-Strike 2 gameplay",
+   desc:"Valve's tactical 5v5 shooter. Rounds are short, there is no respawn within a round, and a per-round economy decides what each player can buy. Skins and a mature esports scene keep it among the top sellers.",
+   idea:"Simple rules plus a round economy create tension without complex content."},
+  {p:"steam",r:4,name:"AION 2",tags:["Open World","Competitive"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"AION 2 gameplay",
+   desc:"NC's free-to-play MMORPG, launched globally on Steam on October 5, 2026 after Early Access from September 30. Flight is central to both travel and combat, in a world NC says is 36 times larger than the original AION. It offers eight classes, solo and 5-player dungeons, 10-player raids, and PvP from 1v1 and 4v4 arenas to cross-server realm-vs-realm battles.",
+   idea:"Flight turns height into a tactical resource, which is worth considering for any open-area PvP layout."},
+  {p:"steam",r:5,name:"Dota 2",tags:["Competitive"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"Dota 2 gameplay trailer",
+   desc:"Valve's free-to-play MOBA. Two teams of five each pick a hero with a unique kit and fight to destroy the enemy base. Deep hero mechanics and the annual The International championship keep a large player base.",
+   idea:"Distinct hero roles make every match different from a small rule set."},
+  {p:"steam",r:6,name:"Cyberpunk 2077",tags:["Open World","Action RPG"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"Cyberpunk 2077 gameplay",
+   desc:"CD Projekt Red's open-world action RPG set in Night City. It mixes first-person shooting, hacking and quests with branching choices. The Phantom Liberty expansion also appears on the same chart.",
+   idea:"One dense, distinctive city with clear districts can carry a whole game."},
+  {p:"steam",r:7,name:"Moon Sweepers",tags:["Simulation","Automation"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"Moon Sweepers gameplay",
+   desc:"A co-op cleaning sim from a two-person Finnish studio, released October 23, 2026. You start with a toothbrush, scrub moon dust into a depot and ship it for cash, then unlock brooms, vehicles, conveyors, solar power and cleaning robots. Up to 16 players can play together. It peaked at about 36,000 concurrent players on Steam within days.",
+   idea:"A joke premise hiding a real logistics and power progression. Small teams can win with this formula."},
+  {p:"steam",r:8,name:"PUBG: BATTLEGROUNDS",tags:["Shooter","Competitive"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"PUBG Battlegrounds gameplay",
+   desc:"The battle royale that popularised the genre. Up to 100 players drop onto a large map, scavenge weapons and gear, and fight inside a shrinking safe zone until one player or squad remains.",
+   idea:"Loot-then-shrink pacing is a proven structure for large-scale matches."},
+  {p:"steam",r:9,name:"FINAL FANTASY RESONANCE",tags:["Turn-Based RPG"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"Final Fantasy Resonance gameplay trailer",
+   desc:"Square Enix's first HD-2D Final Fantasy, released October 22, 2026. It rebuilds the first story arc of the mobile game Final Fantasy Brave Exvius as a premium turn-based RPG with no gacha. Hitting weaknesses staggers enemies for extra turns and cinematic Resonance finishers, and 26 collectible \"Visions\" of past Final Fantasy heroes change each character's role and skills.",
+   idea:"One clear twist (break the gauge, earn extra turns) can refresh a familiar format."},
+  {p:"steam",r:10,name:"Dead by Daylight",tags:["Survival Horror","Competitive"],
+   src:"https://store.steampowered.com/charts/topselling/global",yt:"Dead by Daylight gameplay",
+   desc:"Behaviour Interactive's asymmetric multiplayer horror game. One killer hunts four survivors, who must repair generators and escape. A large roster of licensed horror characters keeps the game fresh.",
+   idea:"1-vs-many roles give two very different experiences on the same map."},
+
+  // ===== ROBLOX — Top Playing Now =====
+  {p:"roblox",r:1,name:"Steal An Egg",tags:["Steal & Tycoon"],
+   src:"https://www.roblox.com/charts",yt:"Roblox Steal An Egg gameplay",
+   desc:"The most-played experience in this snapshot, and the only one above one million concurrent players. You steal an egg from a pet or another player, bring it home, hatch pets that earn money, then spend on treadmill and base upgrades and train Speed to run further.",
+   idea:"Risk while carrying plus passive income. The thrill is the run back to base."},
+  {p:"roblox",r:2,name:"Murder Mystery 2",tags:["Social / RP","Competitive"],
+   src:"https://www.roblox.com/charts",yt:"Roblox Murder Mystery 2 gameplay",
+   desc:"Every round has Innocents, one Sheriff and one Murderer sharing the same map. Live since 2014 and still second by concurrent players.",
+   idea:"Three roles and minimal rules: easy to learn, endlessly replayable."},
+  {p:"roblox",r:3,name:"Adopt Me!",tags:["Social / RP"],
+   src:"https://www.roblox.com/charts",yt:"Roblox Adopt Me gameplay",
+   desc:"Adopt and raise pets, trade with other players and build a home. A Halloween event was running at capture.",
+   idea:"Collecting and trading give a social, long-term reason to come back."},
+  {p:"roblox",r:4,name:"99 Nights in the Forest",tags:["Survival Horror"],
+   src:"https://www.roblox.com/charts",yt:"Roblox 99 Nights in the Forest gameplay",
+   desc:"Build a camp with friends and last 99 nights while something watches from the dark.",
+   idea:"A clear countdown goal gives co-op survival built-in structure."},
+  {p:"roblox",r:5,name:"RIVALS",tags:["Shooter","Competitive"],
+   src:"https://www.roblox.com/charts",yt:"Roblox RIVALS gameplay",
+   desc:"First-to-five duels, from 1v1 up to 5v5.",
+   idea:"Short rounds with a simple win condition keep queueing painless."},
+  {p:"roblox",r:6,name:"Blox Fruits",tags:["Action RPG"],
+   src:"https://www.roblox.com/charts",yt:"Roblox Blox Fruits gameplay",
+   desc:"Train as a swordsman or a fruit user and sail between seas.",
+   idea:"A class-style choice combined with a map of progressive seas."},
+  {p:"roblox",r:7,name:"Steal a Brainrot",tags:["Steal & Tycoon"],
+   src:"https://www.roblox.com/charts",yt:"Roblox Steal a Brainrot gameplay",
+   desc:"Buy \"Brainrot\" characters from a central conveyor or steal them from other players' bases; each one earns money over time. You can lock your base for a short window, and \"rebirth\" resets your progress for permanent bonuses.",
+   idea:"A meme theme, a steal-and-defend loop and a reset system, in one package."},
+  {p:"roblox",r:8,name:"Dress To Impress",tags:["Dress-Up","Social / RP"],
+   src:"https://www.roblox.com/charts",yt:"Roblox Dress To Impress gameplay",
+   desc:"Style an outfit to the round's theme, walk the runway and get voted on. It was also number one on the US Top Trending chart in the same capture.",
+   idea:"Player voting as the win condition: no combat, high creativity."},
+  {p:"roblox",r:9,name:"Jujutsu Shenanigans",tags:["Fighting"],
+   src:"https://www.roblox.com/charts",yt:"Roblox Jujutsu Shenanigans gameplay",
+   desc:"A combo- and skill-based battlegrounds game. A \"SKY ASSASSIN\" update was live at capture.",
+   idea:"Distinct move sets give skilled players room to show off."},
+  {p:"roblox",r:10,name:"Dandy's World",tags:["Survival Horror"],
+   src:"https://www.roblox.com/charts",yt:"Roblox Dandy's World gameplay",
+   desc:"Team up as Toons, run machines and go deeper into Gardenview Center while avoiding what hunts you.",
+   idea:"Co-op objectives under threat: everyone has a job."},
+
+  // ===== GAMEJOLT — Hot =====
+  {p:"gj",r:1,name:"Thank You Bus Driver",tags:["Simulation"],
+   src:"https://gamejolt.com/games/thank-you-bus-driver/1105155",yt:"Thank You Bus Driver Double Fine gameplay",
+   desc:"Double Fine's chaotic bus-driving game ($4.99). You are the town's bus driver trying to get through the day with minimal rulebreaking and maximum gratitude. The depot's rules change every day, rulebreaking passengers can be slapped or thrown off, and getting to the next stop might mean a shortcut through a cornfield.",
+   idea:"Daily-changing rules make a simple driving loop feel new every shift."},
+  {p:"gj",r:2,name:"Super Yooka-Laylee Kart",tags:["Racing"],
+   src:"https://gamejolt.com/games/Super-Yooka-Laylee-Kart/1101471",yt:"Super Yooka-Laylee Kart gameplay",
+   desc:"Playtonic's kart racer, in the wishlist and beta-playtest stage. Getting hit builds a Rage meter, and unleashing it triggers revenge abilities that can flip a race. It includes a solo campaign, online racing and custom race setups.",
+   idea:"Comeback mechanics turn frustration into a payoff."},
+  {p:"gj",r:3,name:"Floor Plan: Slap Out Of It!",tags:["Puzzle","Sandbox"],
+   src:"https://gamejolt.com/games/floorplanslapoutofit/1094592",yt:"Floor Plan Slap Out Of It gameplay",
+   desc:"A \"slap-and-solve\" adventure that combines slapstick humour with puzzles in a big sandbox of secrets. It reimagines the VR Floor Plan series for PC with new puzzles and mechanics.",
+   idea:"Comedy and physical interaction can carry puzzle design."},
+  {p:"gj",r:4,name:"StormStriker",tags:["Shooter","Competitive"],
+   src:"https://gamejolt.com/games/StormStrikerGG/1094300",yt:"StormStriker game play trailer",
+   desc:"A free-to-play, hyperactive 5v5 third-person hero shooter with colourful characters and an emphasis on teamplay. Players pick a hero that fits their playstyle.",
+   idea:"Hero choice plus 5v5 teamplay is a familiar format. Distinct characters are what set it apart."},
+  {p:"gj",r:5,name:"Optimum Link",tags:["Sandbox"],
+   src:"https://gamejolt.com/games/optimumlink/203896",yt:"Optimum Link game",
+   desc:"A \"sandbox of surrealism\" by Protoria Studios. Explore open levels with randomly generated elements, spawn items and characters into a physical sandbox, and create chaos with telekinesis, laser guns and spray paint. The latest version is free on Steam.",
+   idea:"Physical tools plus random levels make for emergent play."},
+  {p:"gj",r:6,name:"Stairway to Nowhere",tags:["Platformer"],
+   src:"https://gamejolt.com/games/stn/80453",yt:"Stairway to Nowhere game gameplay",
+   desc:"A physics-based arcade game: climb as high as you can without being swallowed by the continually rising lava. The game gets harder the higher you go, and you can dash downward as a risk trade-off. An older, small download release.",
+   idea:"A rising hazard is one of the simplest ways to create constant pressure."},
+  {p:"gj",r:7,name:"SuperWEIRD: Idle Automation",tags:["Automation","Simulation"],
+   src:"https://gamejolt.com/games/SuperWEIRD/1019550",yt:"SuperWEIRD Idle Automation gameplay",
+   desc:"A short alpha of a larger game coming to Steam. You automate an army of lemming-like bots to clean the world of \"Goofy Goo\", build bases, fight off monsters and collect treasure, with local co-op for two players. The full game becomes an automation roguelite.",
+   idea:"Idle production chains with a light threat layer."},
+  {p:"gj",r:8,name:"SKYFEAR",tags:["Shooter","Competitive"],
+   src:"https://gamejolt.com/games/Skyfear/1061300",yt:"SKYFEAR game",
+   desc:"A prehistoric dragon aerial arena shooter by Protoria Studios. Breathe fire, launch firebolts, dodge and roll through the air, and unleash special attacks. Offline play against adjustable CPUs earns the same progression as multiplayer, and there is a server browser and LAN support.",
+   idea:"Offline progression parity lowers the barrier for players with slow connections."},
+  {p:"gj",r:9,name:"XANNIBAN",tags:["Shooter","Survival Horror"],
+   src:"https://gamejolt.com/games/xanniban/745016",yt:"XANNIBAN game gameplay",
+   desc:"A point-and-click-driven action-horror shooter that blends strategic planning with quick reflexes. You play the Trespasser in a rogue corporation's underground facility, luring, countering and trapping adaptive machines, using tools such as a flare gun and a caliper. A free two-level demo is available.",
+   idea:"Trap-and-contain enemies encourage planning over pure aim."},
+  {p:"gj",r:10,name:"Hamachi the Psychotic Killer",tags:["Platformer"],
+   src:"https://gamejolt.com/games/hamachithepsychotickiller/334593",yt:"Hamachi the Psychotic Killer game",
+   desc:"A platformer where you play the bad guy: a piece of tofu possessed by a demon queen. You can kill, spare or ignore every civilian, with three routes (Pacifist, Neutral, Genocide) and different endings across eight pixel-art worlds. Defeated or pacified bosses can join your side. Contains cartoon violence.",
+   idea:"Moral-choice routes give a small platformer replay value."}
+];
+
+const PLAT = {steam:{name:"Steam",color:"#1b9bf0"},roblox:{name:"Roblox",color:"#22a65b"},gj:{name:"GameJolt",color:"#ff5a5f"}};
+const HEAD = {steam:"Top Sellers (Global) · Top 10", roblox:"Top Playing Now · Top 10", gj:"Hot · Top 10"};
+const ORDER = ["steam","roblox","gj"];
+let state = {platform:"all", tag:"all"};
+
+// build tag chips from data (most frequent first)
+const tagCount = {};
+GAMES.forEach(g=>g.tags.forEach(t=>tagCount[t]=(tagCount[t]||0)+1));
+const allTags = Object.keys(tagCount).sort((a,b)=>tagCount[b]-tagCount[a]||a.localeCompare(b));
+const tagrow = document.getElementById("tagrow");
+allTags.forEach(t=>{
+  const c=document.createElement("span"); c.className="chip"; c.dataset.f="tag"; c.dataset.v=t; c.textContent=t; tagrow.appendChild(c);
+});
+document.getElementById("pill-tags").textContent = allTags.length;
+document.getElementById("pill-games").textContent = GAMES.length;
+
+const esc = s => String(s).replace(/[&<>"]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+
+function render(){
+  const lists = document.getElementById("lists");
+  lists.innerHTML = "";
+  let shown = 0;
+  ORDER.forEach(p=>{
+    const items = GAMES.filter(g=>g.p===p &&
+      (state.platform==="all"||state.platform===p) &&
+      (state.tag==="all"||g.tags.includes(state.tag)));
+    if(!items.length) return;
+    shown += items.length;
+    const head = document.createElement("div"); head.className="plat-head";
+    head.innerHTML = `<span class="plat-dot" style="background:${PLAT[p].color}"></span><h2>${PLAT[p].name}</h2><span class="desc">${HEAD[p]}</span>`;
+    lists.appendChild(head);
+    const grid = document.createElement("div"); grid.className="grid";
+    items.forEach(g=>{
+      const card = document.createElement("div"); card.className="game";
+      const key = ({steam:"steam",roblox:"rb",gj:"gj"})[g.p] + g.r;
+      const vid = VIDEOS[key];
+      const ytSearch = "https://www.youtube.com/results?search_query="+encodeURIComponent(g.yt);
+      const tagsHtml = g.tags.map(t=>`<span class="gtag" data-tag="${esc(t)}">${esc(t)}</span>`).join("");
+      const badge = `<span class="rank">#${g.r}</span><span class="plat-badge" style="background:${PLAT[g.p].color}">${PLAT[g.p].name}</span>`;
+      const preview = vid
+        ? `<div class="preview playable" data-vid="${vid}" data-title="${esc(g.name)}">
+             <img class="thumb" src="assets/thumbs/${key}.jpg" alt="${esc(g.name)} preview" loading="lazy"
+                  onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${vid}/hqdefault.jpg'" />
+             <span class="play"></span>${badge}
+             <a class="yt-link" href="https://www.youtube.com/watch?v=${vid}" target="_blank" rel="noopener">Open on YouTube ↗</a>
+           </div>`
+        : `<div class="preview"><div class="ph">${esc(g.name)}<small>No verified video available</small></div>${badge}
+             <a class="yt-link" href="${ytSearch}" target="_blank" rel="noopener">Search YouTube ↗</a></div>`;
+      card.innerHTML = `${preview}
+        <div class="body">
+          <p class="gtitle">${esc(g.name)}</p>
+          <div class="gtags">${tagsHtml}</div>
+          <p class="gdesc">${esc(g.desc)}</p>
+          <p class="gidea"><b>Idea:</b> ${esc(g.idea)}</p>
+          <div class="glinks">
+            <a href="${g.src}" target="_blank" rel="noopener">${g.p==="gj"?"Game page":"Source chart"} ↗</a>
+            <a href="${vid?'https://www.youtube.com/watch?v='+vid:ytSearch}" target="_blank" rel="noopener">${vid?"Watch video":"Search video"} ↗</a>
+          </div>
+        </div>`;
+      grid.appendChild(card);
+    });
+    lists.appendChild(grid);
+  });
+  document.getElementById("count").textContent = shown+" game"+(shown===1?"":"s");
+}
+
+document.querySelector(".filters").addEventListener("click",e=>{
+  const c=e.target.closest(".chip"); if(!c) return;
+  document.querySelectorAll('.chip[data-f="'+c.dataset.f+'"]').forEach(x=>x.classList.remove("on"));
+  c.classList.add("on"); state[c.dataset.f]=c.dataset.v; render();
+});
+document.getElementById("lists").addEventListener("click",e=>{
+  // play video
+  const box=e.target.closest(".preview.playable");
+  if(box && !e.target.closest(".yt-link") && !box.dataset.playing){
+    box.dataset.playing="1";
+    const f=document.createElement("iframe");
+    f.src="https://www.youtube-nocookie.com/embed/"+box.dataset.vid+"?autoplay=1&rel=0&modestbranding=1";
+    f.allow="autoplay;encrypted-media;picture-in-picture;fullscreen"; f.allowFullscreen=true;
+    f.title=box.dataset.title+" preview"; box.appendChild(f); return;
+  }
+  // tag click -> filter
+  const t=e.target.closest(".gtag"); if(!t) return;
+  const v=t.dataset.tag;
+  document.querySelectorAll('.chip[data-f="tag"]').forEach(x=>x.classList.remove("on"));
+  const chip=[...document.querySelectorAll('.chip[data-f="tag"]')].find(x=>x.dataset.v===v);
+  if(chip){chip.classList.add("on"); state.tag=v; render();
+    document.querySelector(".filters").scrollIntoView({behavior:"smooth",block:"start"});}
+});
+
+// Roblox Top Playing Now (concurrent players, thousands) — Oct 20, 2026 snapshot
+const rb = [["Steal An Egg",1038.7],["Murder Mystery 2",532.3],["Adopt Me!",237.7],["99 Nights in the Forest",191.9],
+  ["RIVALS",168.5],["Blox Fruits",154.6],["Steal a Brainrot",137.8],["Dress To Impress",123.1],
+  ["Jujutsu Shenanigans",113.7],["Dandy's World",90.3]];
+const chart = echarts.init(document.getElementById("echart"));
+chart.setOption({
+  grid:{left:8,right:56,top:10,bottom:8,containLabel:true},
+  tooltip:{trigger:"axis",axisPointer:{type:"shadow"},formatter:p=>p[0].name+": "+Number(p[0].value).toLocaleString()+"k concurrent"},
+  xAxis:{type:"value",axisLine:{show:false},axisTick:{show:false},splitLine:{lineStyle:{color:"#eceef2"}},axisLabel:{color:"#6b7280"}},
+  yAxis:{type:"category",data:rb.map(d=>d[0]).reverse(),axisLine:{show:false},axisTick:{show:false},axisLabel:{color:"#39404f",fontWeight:600}},
+  series:[{type:"bar",data:rb.map(d=>d[1]).reverse(),barWidth:"62%",
+    itemStyle:{color:"#22a65b",borderRadius:[0,6,6,0]},
+    label:{show:true,position:"right",color:"#1d2433",fontWeight:700,formatter:p=>Math.round(p.value).toLocaleString()+"k"}}]
+});
+window.addEventListener("resize",()=>chart.resize());
+render();
+</script>
+</body>
+</html>
